@@ -72,3 +72,16 @@
       .actions{width:100%}
       .btn{flex:1; text-align:center}
     }
+    .button-style{
+    background-color:white;
+    color:yellow;
+    border:none;
+    cursor:pointer;
+    font-weight:bold;
+    height:40px;
+    width:220px;
+    border-radius:26px;
+    margin-right:10px;
+    margin-top:20px;
+    transition:2s;
+  }
