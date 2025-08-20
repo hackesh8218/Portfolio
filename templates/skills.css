@@ -1,0 +1,74 @@
+:root{
+      --bg: #0f1221;
+      --card: #171a2b;
+      --text: #e8eaf6;
+      --muted: #b9c0d9;
+      --accent: #6c7cff;
+      --accent-2: #00d1ff;
+      --ring: rgba(108,124,255,.5);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,"Helvetica Neue",Arial,"Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 10% -10%, #1b1f38 10%, transparent 60%),
+                  radial-gradient(1200px 800px at 110% 10%, #19203a 10%, transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      line-height:1.6;
+    }
+    .wrap{max-width:1000px; margin:0 auto; padding:24px}
+
+    header{
+      display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin:10px 0 24px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:14px;
+    }
+    .logo{
+      width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, var(--accent), var(--accent-2));
+      display:grid; place-items:center; color:white; font-weight:800; letter-spacing:.5px; box-shadow:0 10px 30px rgba(0,0,0,.25);
+    }
+    .title{margin:0}
+    .title small{display:block; color:var(--muted); font-weight:500}
+
+    .actions{display:flex; gap:10px}
+    .btn{
+      appearance:none; border:1px solid rgba(255,255,255,.15); background:transparent; color:var(--text);
+      padding:10px 14px; border-radius:14px; cursor:pointer; transition:.2s ease; text-decoration:none; font-weight:600;
+    }
+    .btn:hover{background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.25)}
+    .btn.primary{background:linear-gradient(135deg, var(--accent), var(--accent-2)); border:none; color:#0b0e1a}
+    .btn.primary:hover{filter:brightness(1.05)}
+
+    .grid{
+      display:grid; grid-template-columns: repeat(auto-fit, minmax(230px,1fr)); gap:16px;
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01)), var(--card);
+      border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:18px; position:relative; overflow:hidden;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .card:hover{ transform: translateY(-3px); border-color: rgba(108,124,255,.45); box-shadow: 0 10px 30px rgba(0,0,0,.25), 0 0 0 6px var(--ring); }
+    .card h3{margin:0 0 6px}
+    .card p{margin:0 0 12px; color:var(--muted)}
+    .card a.link{
+      display:inline-flex; align-items:center; gap:8px; text-decoration:none; font-weight:700; color:var(--text);
+      padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.12);
+    }
+    .card a.link:hover{background:rgba(255,255,255,.06)}
+
+    .tag{
+      position:absolute; top:12px; right:-34px; transform:rotate(24deg);
+      background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#0b0e1a;
+      font-weight:800; padding:6px 42px; border-radius:8px; font-size:.8rem; box-shadow:0 6px 18px rgba(0,0,0,.25);
+    }
+
+    footer{margin:28px 0 8px; color:var(--muted); font-size:.95rem}
+    .muted{color:var(--muted)}
+    code{background:rgba(255,255,255,.08); padding:2px 6px; border-radius:8px}
+
+    @media (max-width:480px){
+      .actions{width:100%}
+      .btn{flex:1; text-align:center}
+    }
