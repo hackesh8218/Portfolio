@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Blog Builder</title>
+  <meta name="description" content="Write, upload, and arrange blog posts. Single-file page you can drop into any site." />
+     <link rel="stylesheet" href="styles/blog.css">
+</head>
+<body>
+  <div id="header">
+  <button class="nav-btn"><a href="index.html">Index</a></button>
+  <button class="nav-btn"><a href="academics.html">Academics</a></button>
+  <button class="nav-btn"><a href="personal.html">Personal</a></button>
+  <button class="nav-btn"><a href="contact.html">Contact</a></button>
+  <button class="nav-btn"><a href="resume.html">Resume</a></button>
+  <button class="nav-btn"><a href="update.html">Imp Links</a></button>
+  <button class="nav-btn"><a href="projects.html">Projects</a></button>
+  <button class="nav-btn"><a href="skills.html">Skills</a></button>
+</div>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 5h16M4 12h16M4 19h10" stroke="url(#g)" stroke-width="2" stroke-linecap="round"/><defs><linearGradient id="g" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse"><stop stop-color="#6ea8fe"/><stop offset="1" stop-color="#9bffd6"/></linearGradient></defs></svg>
+        <h1>Blog Builder</h1>
+        <span class="pill">Single-file · Drop-in</span>
+      </div>
+      <div class="toolbar">
+        <button class="btn secondary" id="exportJson">Export JSON</button>
+        <label class="btn ghost" for="importJson">Import JSON</label>
+        <input id="importJson" type="file" accept="application/json" hidden />
+        <button class="btn danger" id="clearAll">Clear All</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="card" aria-labelledby="editorTitle">
+        <div class="head"><h2 id="editorTitle">Write a Post</h2></div>
+        <div class="body">
+          <label>Title</label>
+          <input id="title" type="text" placeholder="Amazing post title" />
+
+          <div class="row">
+            <div>
+              <label>Tags (comma separated)</label>
+              <input id="tags" type="text" placeholder="tech, tips, life" />
+            </div>
+            <div>
+              <label>Author</label>
+              <input id="author" type="text" placeholder="Your name" />
+            </div>
+          </div>
+
+          <label>Cover Image</label>
+          <input id="cover" type="file" accept="image/*" />
+
+          <label>Content (Markdown-friendly)</label>
+          <textarea id="content" placeholder="Write your story..."></textarea>
+
+          <div class="row" style="margin-top:12px">
+            <button id="addPost" class="btn">Add Post</button>
+            <button id="resetForm" class="btn secondary">Reset</button>
+          </div>
+
+          <div style="margin-top:14px" class="ads">Ad Slot Placeholder · Paste your AdSense/Ad Manager snippet here when integrating into your site.</div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="postsTitle">
+        <div class="head"><h2 id="postsTitle">Your Posts</h2><span class="pill" id="count">0 posts</span></div>
+        <div id="posts" class="posts"></div>
+        <div id="emptyState" class="empty" style="display:none">No posts yet. Create one on the left. Drag cards to reorder. Click ••• to edit, duplicate, or delete.</div>
+        <div class="footer">
+          <span>Drag & drop to reorder. Saved locally.</span>
+          <a class="link" href="#" id="copyAllHtml">Copy All Posts as HTML</a>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <template id="postTemplate">
+    <article class="post" draggable="true">
+      <div class="thumb" aria-label="Cover image"><span class="muted">No image</span></div>
+      <div class="content">
+        <h3></h3>
+        <div class="meta"></div>
+        <div class="bodyText"></div>
+      </div>
+      <div class="actions">
+        <button class="btn secondary edit">Edit</button>
+        <button class="btn secondary duplicate">Duplicate</button>
+        <button class="btn danger remove">Delete</button>
+      </div>
+    </article>
+  </template>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const postsEl = $('#posts');
+    const emptyState = $('#emptyState');
+    const countEl = $('#count');
+
+    const state = {
+      posts: load() || []
+    };
+
+    function uuid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}
+
+    function sanitize(text){
+      return String(text)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;');
+    }
+
+    function mdToHtml(md){
+      let html = sanitize(md);
+      html = html.replace(/^### (.*$)/gim,'<h4>$1</h4>');
+      html = html.replace(/^## (.*$)/gim,'<h3>$1</h3>');
+      html = html.replace(/^# (.*$)/gim,'<h2>$1</h2>');
+      html = html.replace(/\*\*(.*?)\*\*/gim,'<strong>$1</strong>');
+      html = html.replace(/\*(.*?)\*/gim,'<em>$1</em>');
+      html = html.replace(/`([^`]+)`/gim,'<code>$1</code>');
+      html = html.replace(/\n\n/g,'</p><p>');
+      return '<p>'+html+'</p>';
+    }
+
+    function save(){localStorage.setItem('blog_posts_v1', JSON.stringify(state.posts))}
+    function load(){try{return JSON.parse(localStorage.getItem('blog_posts_v1'))}catch(e){return []}}
+
+    function render(){
+      postsEl.innerHTML = '';
+      if(!state.posts.length){emptyState.style.display='block'; countEl.textContent='0 posts'; return}
+      emptyState.style.display='none';
+      countEl.textContent = state.posts.length + (state.posts.length===1?' post':' posts');
+      state.posts.forEach(post=>{
+        const t = document.getElementById('postTemplate');
+        const node = t.content.cloneNode(true);
+        const article = node.querySelector('.post');
+        article.dataset.id = post.id;
+
+        const thumb = node.querySelector('.thumb');
+        if(post.cover){
+          thumb.innerHTML = `<img alt="${sanitize(post.title)}" src="${post.cover}"/>`;
+        } else {
+          thumb.innerHTML = '<span class="muted" style="color:#6b7f95">No image</span>';
+        }
+
+        node.querySelector('h3').textContent = post.title || 'Untitled';
+        const meta = node.querySelector('.meta');
+        const dt = new Date(post.date).toLocaleString();
+        meta.textContent = `${post.author || 'Anon'} • ${dt} • ${post.tags||''}`;
+
+        node.querySelector('.bodyText').innerHTML = mdToHtml(post.content||'');
+
+        node.querySelector('.edit').addEventListener('click',()=> editPost(post.id));
+        node.querySelector('.duplicate').addEventListener('click',()=> duplicatePost(post.id));
+        node.querySelector('.remove').addEventListener('click',()=> removePost(post.id));
+
+        enableDrag(article);
+        postsEl.appendChild(node);
+      });
+    }
+
+    function addPost(post){state.posts.unshift(post); save(); render();}
+
+    function editPost(id){
+      const p = state.posts.find(x=>x.id===id);
+      if(!p) return;
+      $('#title').value = p.title;
+      $('#tags').value = p.tags;
+      $('#author').value = p.author;
+      $('#content').value = p.content;
+      $('#cover').value = '';
+      removePost(id, false);
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+
+    function duplicatePost(id){
+      const p = state.posts.find(x=>x.id===id);
+      if(!p) return;
+      const copy = {...p, id: uuid(), date: Date.now()};
+      addPost(copy);
+    }
+
+    function removePost(id, rerender = true){
+      state.posts = state.posts.filter(x=>x.id!==id);
+      save();
+      if(rerender) render();
+    }
+
+    function enableDrag(el){
+      el.addEventListener('dragstart', e=>{
+        el.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', el.dataset.id);
+      });
+      el.addEventListener('dragend', ()=> el.classList.remove('dragging'));
+    }
+
+    postsEl.addEventListener('dragover', e=>{
+      e.preventDefault();
+      const dragging = document.querySelector('.post.dragging');
+      if(!dragging) return;
+      const afterElement = getDragAfterElement(postsEl, e.clientY);
+      if(afterElement==null){postsEl.appendChild(dragging)}
+      else{postsEl.insertBefore(dragging, afterElement)}
+    });
+
+    postsEl.addEventListener('drop', ()=>{
+      const ids = [...document.querySelectorAll('.post')].map(p=>p.dataset.id);
+      state.posts.sort((a,b)=> ids.indexOf(a.id)-ids.indexOf(b.id));
+      save();
+      render();
+    });
+
+    function getDragAfterElement(container, y){
+      const els = [...container.querySelectorAll('.post:not(.dragging)')];
+      return els.reduce((closest, child)=>{
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height/2;
+        if(offset < 0 && offset > closest.offset){
+          return {offset, element: child}
+        } else {return closest}
+      }, {offset: Number.NEGATIVE_INFINITY}).element;
+    }
+
+    $('#addPost').addEventListener('click', async ()=>{
+      const title = $('#title').value.trim();
+      const tags = $('#tags').value.trim();
+      const author = $('#author').value.trim();
+      const content = $('#content').value.trim();
+      const file = $('#cover').files[0];
+
+      let cover = '';
+      if(file){
+        cover = await fileToDataUrl(file);
+      }
+
+      const post = { id: uuid(), title, tags, author, content, cover, date: Date.now() };
+      addPost(post);
+      $('#title').value = '';
+      $('#tags').value = '';
+      $('#author').value = '';
+      $('#content').value = '';
+      $('#cover').value = '';
+    });
+
+    $('#resetForm').addEventListener('click', ()=>{
+      $('#title').value = '';
+      $('#tags').value = '';
+      $('#author').value = '';
+      $('#content').value = '';
+      $('#cover').value = '';
+    });
+
+    function fileToDataUrl(file){
+      return new Promise((res,rej)=>{
+        const fr = new FileReader();
+        fr.onload = ()=> res(fr.result);
+        fr.onerror = rej;
+        fr.readAsDataURL(file);
+      });
+    }
+
+    $('#exportJson').addEventListener('click', ()=>{
+      const blob = new Blob([JSON.stringify(state.posts,null,2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'blog-posts.json'; a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    $('#importJson').addEventListener('change', e=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      const fr = new FileReader();
+      fr.onload = ()=>{
+        try{
+          const data = JSON.parse(fr.result);
+          if(Array.isArray(data)){
+            state.posts = data.map(p=>({id: p.id||uuid(), title:p.title||'', tags:p.tags||'', author:p.author||'', content:p.content||'', cover:p.cover||'', date:p.date||Date.now()}));
+            save();
+            render();
+          }
+        }catch(err){alert('Invalid JSON')}
+      };
+      fr.readAsText(file);
+      e.target.value='';
+    });
+
+    $('#clearAll').addEventListener('click', ()=>{
+      if(confirm('Delete all posts?')){ state.posts = []; save(); render(); }
+    });
+
+    $('#copyAllHtml').addEventListener('click', e=>{
+      e.preventDefault();
+      const html = state.posts.map(p=> postToHtml(p)).join('\n\n');
+      navigator.clipboard.writeText(html).then(()=>{ alert('All posts HTML copied to clipboard!') });
+    });
+
+    function postToHtml(p){
+      const img = p.cover ? `<img src="${p.cover}" alt="${sanitize(p.title)}" />` : '';
+      return `<!-- Post: ${sanitize(p.title)} -->\n<article class="post">\n  <div class="thumb">${img}</div>\n  <div class="content">\n    <h3>${sanitize(p.title)}</h3>\n    <div class="meta">${sanitize(p.author||'Anon')} • ${new Date(p.date).toLocaleString()} • ${sanitize(p.tags||'')}</div>\n    <div class="bodyText">${mdToHtml(p.content||'')}</div>\n  </div>\n</article>`;
+    }
+
+    render();
+  </script>
+</body>
+</html>
